@@ -35,5 +35,18 @@ the start of the line following the deleted text."
                      (forward-line (or arg 1))
                      (point))))
 
+  (defun my-editing-delete-to-beginning-of-line ()
+    "Delete from point to the beginning of the line, without the kill ring.
+The deleted text cannot be yanked back."
+    (interactive)
+    (delete-region (line-beginning-position) (point)))
+
+  (defun my-editing-delete-to-end-of-line ()
+    "Delete from point to the end of the line, without the kill ring.
+Covers the same span as `kill-line' would, but the text is gone for
+good and cannot be yanked back."
+    (interactive)
+    (delete-region (point) (line-end-position)))
+
   (provide 'my-editing)
 #+end_src
