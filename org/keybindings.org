@@ -1,0 +1,33 @@
+#+title: habshe-emacs — keybindings
+#+author: A. Shehab (habshehabshe)
+
+All our bindings, and only our bindings. Emacs default keybindings
+are never changed. Our reserved prefix is =C-M-S-s= (Ctrl, Meta,
+Shift, super — the capslock key, remapped at the OS layer), which
+nothing in Emacs uses. Every binding we define starts there.
+
+This module loads last: it references commands from every other
+module.
+
+#+begin_src emacs-lisp :tangle "../lisp/my-keybindings.el"
+  ;;; my-keybindings.el --- GENERATED from org/keybindings.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: The C-M-S-s reserved prefix and every binding under it.
+
+  (defgroup my-keybindings nil
+    "Keybindings for my Emacs configuration.")
+
+  ;; Editing: line deletion.
+  (keymap-global-set "C-M-s-\\" #'my-editing-delete-line)
+  (keymap-global-set "C-M-s-<backspace>" #'my-editing-delete-to-beginning-of-line)
+  (keymap-global-set "C-M-s-<delete>" #'my-editing-delete-to-end-of-line)
+
+  ;; Motion: file-wide.
+  (keymap-global-set "C-M-s-<home>" #'beginning-of-buffer)
+  (keymap-global-set "C-M-s-<end>" #'end-of-buffer)
+
+  ;; Buffer switching.
+  (keymap-global-set "C-M-s-<prior>" #'next-buffer)
+  (keymap-global-set "C-M-s-<next>" #'previous-buffer)
+
+  (provide 'my-keybindings)
+#+end_src
