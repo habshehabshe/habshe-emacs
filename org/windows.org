@@ -1,20 +1,90 @@
-#+title: habshe-emacs — windows and buffer display
+#+title: habshe-emacs — windows
 #+author: A. Shehab (habshehabshe)
 
-Where buffers go when displayed. The policy: never split, never
-pop up — reuse the window already showing the buffer if there is
-one, else use the selected window. This is also where buffrt's
-display routing will integrate later, so it stays isolated.
+Where buffers go when displayed. The policy is absolute: the
+frame never splits — every buffer, from any source, displays in
+the one window, replacing what was there. The window manager
+handles multiplexing; Emacs never creates windows.
+
+How =display-buffer= actually works (docstring, verified): it
+combines the functions of =display-buffer-overriding-action=,
+=display-buffer-alist=, the caller's ACTION argument,
+=display-buffer-base-action= and =display-buffer-fallback-action=
+into ONE list and calls them in turn until one returns non-nil.
+The alist therefore gets first try — it does not veto the
+caller. If every alist function fails, the caller's splitters
+still run.
+
+The failure case is the minibuffer: while it is active, the
+selected window IS the minibuffer window, so
+=display-buffer-same-window= fails by definition and
+=display-buffer-reuse-window= fails for any not-yet-displayed
+buffer. Completions are exactly this case —
+=minibuffer-completion-help= passes an explicit action ending in
+=display-buffer-at-bottom= / =display-buffer-below-selected=,
+which split once our two functions fail.
+
+The action list therefore ends with =display-buffer-use-some-
+window=: it chooses an existing window, creates nothing, and
+fails only when every window is dedicated. In a one-window frame
+it resolves to the main window — so the chain always terminates
+in whole-frame display, never a split, never a new frame.
+
+Placement note: the variables here are buffer-named
+(=display-buffer-alist= keys are buffer-name regexps), but the
+mechanism is window management — =display-buffer= answers "which
+window shows this buffer", the functions live in =window.el=,
+and the manual covers them in the Windows chapter. Hence this
+module, not my-buffers.
+
+Entry format, for the record: each =display-buffer-alist= entry
+is =(REGEXP . ACTION)= where ACTION is =(FUNCTIONS-LIST .
+PARAMETERS-ALIST)= — the constant below is already that shape, so
+the alist entry splices it directly; wrapping it again makes
+display-buffer treat the function list itself as a function.
+
+Direct =split-window= calls from package code bypass
+=display-buffer= entirely; if one is ever observed, advise
+=split-window= rather than weakening this policy.
 
 #+begin_src emacs-lisp :tangle "../lisp/my-windows.el"
   ;;; my-windows.el --- GENERATED from org/windows.org — do not edit -*- lexical-binding: t; -*-
-  ;;; Commentary: Buffer display policy. Future buffrt routing lives here.
+  ;;; Commentary: Absolute no-split display policy. One window per
+  ;;; frame, always.
 
   (defgroup my-windows nil
     "Window and buffer display policy for my Emacs configuration.")
 
-  (setopt display-buffer-base-action
-          '((display-buffer-reuse-window display-buffer-same-window) . nil))
+  ;; The one display action, in the canonical action shape:
+  ;; (FUNCTIONS-LIST . PARAMETERS-ALIST).
+  ;;
+  ;; reuse-window: if the buffer is already shown, use that window.
+  ;; same-window:  else, if the selected window is a normal window,
+  ;;               replace its buffer.
+  ;; use-some-window: else (selected window is the minibuffer),
+  ;;               take an existing window — the main window, in a
+  ;;               one-window frame. Never creates a window or frame;
+  ;;               fails only if every window is dedicated.
+  ;;
+  ;; The terminator matters: without use-some-window, a minibuffer
+  ;; display (completions) exhausts the first two, and the caller's
+  ;; own action — at-bottom / below-selected — splits.
+  (defconst my-windows-display-action
+    '((display-buffer-reuse-window
+       display-buffer-same-window
+       display-buffer-use-some-window) . nil)
+    "The only display action my configuration permits: reuse the
+window if the buffer is already shown, else replace the selected
+window, else take the frame's main window. Never split, never
+pop up a frame.")
+
+  ;; Catch-all entry: gets first try on every display, so the
+  ;; caller's own actions (completions' at-bottom, help's
+  ;; pop-ups) are never reached.
+  (setopt display-buffer-alist
+          `((".*" . ,my-windows-display-action)))
+  (setopt display-buffer-base-action my-windows-display-action)
+  (setopt display-buffer-fallback-action my-windows-display-action)
 
   (provide 'my-windows)
 #+end_src
