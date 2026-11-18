@@ -1,0 +1,20 @@
+#+title: habshe-emacs — windows and buffer display
+#+author: A. Shehab (habshehabshe)
+
+Where buffers go when displayed. The policy: never split, never
+pop up — reuse the window already showing the buffer if there is
+one, else use the selected window. This is also where buffrt's
+display routing will integrate later, so it stays isolated.
+
+#+begin_src emacs-lisp :tangle "../lisp/my-windows.el"
+  ;;; my-windows.el --- GENERATED from org/windows.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: Buffer display policy. Future buffrt routing lives here.
+
+  (defgroup my-windows nil
+    "Window and buffer display policy for my Emacs configuration.")
+
+  (setopt display-buffer-base-action
+          '((display-buffer-reuse-window display-buffer-same-window) . nil))
+
+  (provide 'my-windows)
+#+end_src
