@@ -1,5 +1,6 @@
 # generated elisp (tangled from org/ — restore with: make tangle)
 /init.el
+/early-init.el
 /lisp/
 
 # emacs runtime state (regenerated, machine-specific)
