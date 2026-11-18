@@ -1,0 +1,45 @@
+#+title: habshe-emacs — package manifest
+#+author: A. Shehab (habshehabshe)
+
+Installation only, per the rules: this module owns the manifest of
+external packages and the ensure-pass that installs them. It never
+configures anything — each package's configuration lives in its own
+=my-<package>= module, loaded after this one.
+
+#+begin_src emacs-lisp :tangle "../lisp/my-packages.el"
+  ;;; my-packages.el --- GENERATED from org/packages.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: Owns the external-package manifest and the ensure
+  ;;; pass that installs anything missing at startup. Never configures.
+
+  (defgroup my-packages nil
+    "External package installation for my Emacs configuration.")
+
+  (defcustom my-packages-manifest '(yasnippet whole-line-or-region)
+    "External packages to install at startup.
+Each entry is a symbol accepted by `package-install'. Packages
+not on any archive are installed separately via
+`package-vc-install' and do not belong in this list."
+    :group 'my-packages
+    :type '(repeat symbol))
+
+  (defvar my-packages--archives-refreshed nil
+    "Whether package archives have been refreshed this session.")
+
+  (defun my-packages--refresh-archives ()
+    "Refresh package archive contents, once per session."
+    (unless my-packages--archives-refreshed
+      (package-refresh-contents)
+      (setq my-packages--archives-refreshed t)))
+
+  (defun my-packages-ensure-installed ()
+    "Install every manifest package that is missing.
+Archives are refreshed once, and only if something is missing."
+    (let ((missing (seq-remove #'package-installed-p my-packages-manifest)))
+      (when missing
+        (my-packages--refresh-archives)
+        (dolist (package missing)
+          (package-install package)))))
+
+  (my-packages-ensure-installed)
+  (provide 'my-packages)
+#+end_src
