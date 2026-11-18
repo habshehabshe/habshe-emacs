@@ -1,0 +1,31 @@
+#+title: habshe-emacs — buffers
+#+author: A. Shehab (habshehabshe)
+
+Buffer-local display modes, globalized: line numbers, current-line
+highlight, and soft wrapping. Soft wrapping wraps at word boundaries
+(visual-line-mode implies word-wrap buffer-locally, so no explicit
+word-wrap is needed) and produces no fringe arrows — those are
+truncation artifacts, and wrapped lines never truncate.
+
+The fill-column indicator and its interaction with visual-line-mode
+will be designed and added here in a later pass.
+
+#+begin_src emacs-lisp :tangle "../lisp/my-buffers.el"
+  ;;; my-buffers.el --- GENERATED from org/buffers.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: Buffer display: line numbers, highlight, wrapping.
+
+  (defgroup my-buffers nil
+    "Buffer display for my Emacs configuration.")
+
+  ;; Line numbers in every buffer.
+  (global-display-line-numbers-mode 1)
+
+  ;; Highlight the line point is on.
+  (global-hl-line-mode 1)
+
+  ;; Soft-wrap long lines at word boundaries. No mid-word breaks, no
+  ;; truncation, therefore no fringe continuation arrows.
+  (global-visual-line-mode 1)
+
+  (provide 'my-buffers)
+#+end_src
