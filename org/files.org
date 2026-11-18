@@ -1,0 +1,46 @@
+#+title: habshe-emacs — files and litter
+#+author: A. Shehab (habshehabshe)
+
+All Emacs litter lives inside the init directory, in directories
+that are created before anything can write into them.
+
+#+begin_src emacs-lisp :tangle "../lisp/my-files.el"
+  ;;; my-files.el --- GENERATED from org/files.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: Backup, auto-save, and lockfile policy. All litter is
+  ;;; confined to user-emacs-directory, in pre-created directories.
+
+  (defgroup my-files nil
+    "File and litter management for my Emacs configuration.")
+
+  (defconst my-files-backup-directory
+    (expand-file-name "backup/" user-emacs-directory)
+    "Where backup files live.")
+
+  (defconst my-files-auto-save-directory
+    (expand-file-name "autosave/" user-emacs-directory)
+    "Where auto-save files live.")
+
+  ;; Directories must exist before anything writes into them.
+  (make-directory my-files-backup-directory 'parents)
+  (make-directory my-files-auto-save-directory 'parents)
+
+  ;; Backups: versioned, copied (so editing a file being backed up is
+  ;; never disturbed), kept out of working directories.
+  (setopt backup-directory-alist `(("." . ,my-files-backup-directory)))
+  (setopt backup-by-copying t)
+  (setopt version-control t)
+  (setopt delete-old-versions t)
+  (setopt kept-new-versions 6)
+  (setopt kept-old-versions 2)
+
+  ;; Auto-saves: the replacement string must carry \\1 — the visited
+  ;; file name — or every buffer's auto-save clobbers the same file.
+  ;; The legacy config had exactly this bug.
+  (setopt auto-save-file-name-transforms
+          `((".*" ,(concat my-files-auto-save-directory "\\1") t)))
+
+  ;; No .#file lockfile litter anywhere.
+  (setopt create-lockfiles nil)
+
+  (provide 'my-files)
+#+end_src
