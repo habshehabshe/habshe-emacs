@@ -1,0 +1,38 @@
+#+title: habshe-emacs — early initialization
+#+author: A. Shehab (habshehabshe)
+
+Runs before the first frame exists and before package activation.
+Owns everything that must be true at frame-creation time: frame
+chrome, frame sizing behavior, package suppression, and GC
+headroom for the init phase.
+
+#+begin_src emacs-lisp :tangle "../early-init.el"
+  ;;; early-init.el --- GENERATED from org/early-init.org — do not edit -*- lexical-binding: t; -*-
+
+  ;; Suppress package.el's automatic activation: init.el drives package
+  ;; setup (activation + install pass) at a chosen point. setq is
+  ;; deliberate here — package.el is not loaded yet, so `setopt' cannot
+  ;; see the option; this is the documented exception.
+  (setq package-enable-at-startup nil)
+
+  ;; Frame chrome: disabled before the first frame is mapped, so no bar
+  ;; ever flashes on screen.
+  (menu-bar-mode -1)
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+
+  ;; Frames size to exact pixels and do not resize when fonts change.
+  (setopt frame-resize-pixelwise t)
+  (setopt frame-inhibit-implied-resize t)
+
+  ;; GC headroom while init runs; restored once init is done.
+  (setq gc-cons-threshold most-positive-fixnum)
+
+  (defun my-early-init--restore-gc ()
+    "Restore the garbage collector after initialization.
+The conservative default suits interactive editing far better
+than the unbounded threshold used during startup."
+    (setq gc-cons-threshold 800000))
+
+  (add-hook 'after-init-hook #'my-early-init--restore-gc)
+#+end_src
