@@ -26,6 +26,13 @@
 #   * No generated elisp is tracked. The repo is org/ + makefile +
 #     README.md + .gitignore; git status stays clean across tangle and
 #     detangle cycles. Fresh clone entry point: make tangle.
+#   * org-babel deliberately SKIPS the disk write when tangled content is
+#     byte-identical to the existing target, preserving its mtime (a
+#     feature for downstream make builds). We therefore touch every
+#     target after a successful tangle: a successful tangle means the
+#     target matches its source, and the touch asserts that in make
+#     semantics. Without it, mtime-only staleness (touch'ed org file)
+#     could never be cleared by re-tangling.
 # ==========================================================================
 
 EMACS       := emacs
@@ -109,6 +116,7 @@ ifdef org
 	               --eval "(org-babel-tangle-file \"$(ROOT_DIR)/$(ORG_DIR)/$(org:.org=).org\")"; \
 	for t in $$targets; do \
 	  test -f "$$t" || { echo "FAILED to generate: $$t"; exit 1; }; \
+	  touch "$$t"; \
 	done; \
 	echo "tangled $(org:.org=).org:"; for t in $$targets; do echo "  $$t"; done
 else
@@ -134,8 +142,10 @@ status:
 
 # --- Run / Verify -----------------------------------------------------------
 run:
-	@test -f init.el || echo 'warning: no init.el — make tangle first (stock Emacs will start).'
-	$(EMACS) --init-directory "$(ROOT_DIR)"
+	@test -f init.el || { echo 'error: no init.el — make tangle first.'; \
+	  echo '(--init-directory without init.el silently falls back to the'; \
+	  echo ' default init file; refusing to launch the wrong Emacs.)'; exit 1; }
+	$(EMACS) --init-directory="$(ROOT_DIR)"
 
 verify:
 	@test -f init.el || { echo 'no init.el — make tangle first'; exit 1; }
