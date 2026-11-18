@@ -2,19 +2,33 @@
 #+author: A. Shehab (habshehabshe)
 
 All our bindings, and only our bindings. Emacs default keybindings
-are never changed. Our reserved prefix is =C-M-S-s= (Ctrl, Meta,
-Shift, super — the capslock key, remapped at the OS layer), which
-nothing in Emacs uses. Every binding we define starts there.
+are never changed — and with the capslock prefix this costs
+nothing: capslock emits Ctrl+Meta+super, and every chord carrying
+the super modifier (=C-M-s-<key>= in key-string notation, where
+=s-= before a key means super) is unbound in default Emacs.
+
+Because a pure modifier stack generates no key event of its own,
+there is no prefix keymap for the capslock chords — each binding
+is one full global chord. The exception is =C-M-s-z=: capslock+z
+is a complete event, so it carries a real sub-prefix keymap for
+zoom, whose inner keys (=+=, =-=, ===, and their numpad twins
+=<kp-add>=, =<kp-subtract>=, =<kp-equal>=) are repeatable via
+=repeat-mode= — after =caps,z +=, bare =+= repeats.
 
 This module loads last: it references commands from every other
 module.
 
 #+begin_src emacs-lisp :tangle "../lisp/my-keybindings.el"
   ;;; my-keybindings.el --- GENERATED from org/keybindings.org — do not edit -*- lexical-binding: t; -*-
-  ;;; Commentary: The C-M-S-s reserved prefix and every binding under it.
+  ;;; Commentary: The C-M-s (Ctrl+Meta+super) reserved prefix: full
+  ;;; chords for commands, a real sub-prefix for zoom, repeat-mode.
 
   (defgroup my-keybindings nil
     "Keybindings for my Emacs configuration.")
+
+  ;; --- Direct chords ---------------------------------------------------------
+  ;; Every capslock chord is a full event with the super modifier;
+  ;; none collide with any default binding.
 
   ;; Editing: line deletion.
   (keymap-global-set "C-M-s-\\" #'my-editing-delete-line)
@@ -28,6 +42,31 @@ module.
   ;; Buffer switching.
   (keymap-global-set "C-M-s-<prior>" #'next-buffer)
   (keymap-global-set "C-M-s-<next>" #'previous-buffer)
+
+  ;; --- Zoom sub-prefix -------------------------------------------------------
+  ;; capslock+z is a complete event, so it can hold a real keymap.
+  ;; Inner keys zoom; both row and numpad keysyms are bound. The same
+  ;; map serves as the repeat map, so after any zoom command the
+  ;; inner keys work bare.
+  (defvar my-keybindings-zoom-map
+    (define-keymap
+      "+"  #'my-frames-zoom-in
+      "-"  #'my-frames-zoom-out
+      "="  #'my-frames-zoom-reset
+      "<kp-add>"     #'my-frames-zoom-in
+      "<kp-subtract>" #'my-frames-zoom-out
+      "<kp-equal>"   #'my-frames-zoom-reset)
+    "Zoom keymap: bound to C-M-s-z, and the zoom repeat map.")
+
+  (keymap-global-set "C-M-s-z" my-keybindings-zoom-map)
+
+  ;; --- Repeat mode -----------------------------------------------------------
+  ;; After a zoom command, + - = repeat without the prefix.
+  (put 'my-frames-zoom-in    'repeat-map 'my-keybindings-zoom-map)
+  (put 'my-frames-zoom-out   'repeat-map 'my-keybindings-zoom-map)
+  (put 'my-frames-zoom-reset 'repeat-map 'my-keybindings-zoom-map)
+
+  (repeat-mode 1)
 
   (provide 'my-keybindings)
 #+end_src
