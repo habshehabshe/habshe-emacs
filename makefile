@@ -10,6 +10,11 @@
 # given an argument acts on that one thing; given no argument it acts on
 # ALL of them. Extensions are always inferred: org= takes a bare name.
 #
+# Command groups, in lifecycle order (targets and help follow it):
+#   BUILD    tangle           CHECK    status
+#   TRY      try              INSTALL  install / uninstall
+#   CLEAN    tidy / clean
+#
 # Invariants:
 #   * Tangling ALWAYS runs from the repo root with a clean Emacs (-Q):
 #     no user config can influence what the org files produce.
@@ -19,20 +24,19 @@
 #     generated — the prefix doubles as the manifest filter, so
 #     :tangle "no" can never enter the kill list.
 #   * The org :tangle headers are the build manifest. tangle, status and
-#     detangle derive their target lists by grepping the org sources;
-#     never hand-maintain a file list here.
+#     tidy derive their target lists by grepping the org sources; never
+#     hand-maintain a file list here.
 #   * We pre-create every target directory from the manifest — whether
 #     org-babel mkdirs itself is version-dependent; the build owns the tree.
+#   * org-babel deliberately SKIPS the disk write when tangled content is
+#     byte-identical to the existing target, preserving its mtime. We
+#     therefore touch every target after a successful tangle: a successful
+#     tangle means the target matches its source, and the touch asserts
+#     that in make semantics. Without it, mtime-only staleness could
+#     never be cleared by re-tangling.
 #   * No generated elisp is tracked. The repo is org/ + makefile +
 #     README.md + .gitignore; git status stays clean across tangle and
-#     detangle cycles. Fresh clone entry point: make tangle.
-#   * org-babel deliberately SKIPS the disk write when tangled content is
-#     byte-identical to the existing target, preserving its mtime (a
-#     feature for downstream make builds). We therefore touch every
-#     target after a successful tangle: a successful tangle means the
-#     target matches its source, and the touch asserts that in make
-#     semantics. Without it, mtime-only staleness (touch'ed org file)
-#     could never be cleared by re-tangling.
+#     tidy cycles. Fresh clone entry point: make tangle.
 # ==========================================================================
 
 EMACS       := emacs
@@ -56,7 +60,7 @@ manifest = grep -hoE ':tangle[[:space:]]+"\.\./[^"]+"' $(1) \
 ALL_TARGETS := $(shell $(call manifest,$(ORGS)))
 
 .DEFAULT_GOAL := usage
-.PHONY: usage help tangle status run verify install uninstall detangle clean
+.PHONY: usage help tangle status try install uninstall tidy clean
 
 # --------------------------------------------------------------------------
 usage:
@@ -71,35 +75,44 @@ help:
 	@echo 'with no argument it acts on ALL of them. Extensions inferred:'
 	@echo 'org= takes a bare name (init, not init.org).'
 	@echo ''
-	@echo 'Fresh clone entry point:  make tangle && make run'
+	@echo 'Fresh clone entry point:  make tangle && make try'
 	@echo ''
+	@echo 'BUILD'
 	@echo '  make tangle              tangle every org under org/'
 	@echo '  make tangle org=NAME     tangle only org/NAME.org'
 	@echo ''
-	@echo '  make status              freshness report: for every tangle'
-	@echo '                           target, ok / STALE (org newer than'
-	@echo '                           target) / MISSING. Exits nonzero if'
-	@echo '                           any are not ok.'
+	@echo 'CHECK'
+	@echo '  make status              freshness report for every org file:'
+	@echo '                           ok / STALE (org newer than target) /'
+	@echo '                           MISSING. Exits nonzero if any are not ok.'
+	@echo '  make status org=NAME     report for only org/NAME.org'
 	@echo ''
-	@echo '  make run                 test-drive the tangled tree with an'
-	@echo '                           explicit --init-directory (never'
-	@echo '                           touches the installed/legacy config)'
-	@echo '  make verify              batch-load init.el to catch load-time'
-	@echo '                           errors without launching a frame'
+	@echo 'TRY'
+	@echo '  make try                 launch Emacs on the tangled tree with an'
+	@echo '                           explicit --init-directory (never touches'
+	@echo '                           the installed/legacy config). Refuses'
+	@echo '                           without init.el. Warns if org sources'
+	@echo '                           are newer than their tangles.'
+	@echo '  make try opts=STRING     pass STRING through verbatim to the emacs'
+	@echo '                           command line, after --init-directory.'
+	@echo '                           e.g. opts="--debug-init" for a backtrace'
+	@echo '                           on init errors, opts="--daemon", opts="-nw".'
 	@echo ''
+	@echo 'INSTALL'
 	@echo '  make install             symlink ~/.config/emacs -> this repo,'
 	@echo '                           making it the default Emacs. Refuses'
 	@echo '                           if something already lives there.'
 	@echo '  make uninstall           remove that symlink — only if it is'
 	@echo '                           ours.'
 	@echo ''
-	@echo '  make detangle            remove every generated elisp file.'
+	@echo 'CLEAN'
+	@echo '  make tidy                remove every generated elisp file.'
 	@echo '                           Survivors: org/, makefile, README.md,'
 	@echo '                           .gitignore. Stock Emacs until re-tangled.'
-	@echo '  make clean               detangle + wipe runtime state'
-	@echo '                           (elpa/, eln-cache/, backups, ...).'
+	@echo '  make clean               tidy + wipe runtime state (elpa/,'
+	@echo '                           eln-cache/, backups, ...).'
 
-# --- Tangle ----------------------------------------------------------------
+# --- BUILD: tangle ----------------------------------------------------------
 # No org=  : tangle every org under org/.
 # org=NAME : tangle only that one. NAME may carry an .org suffix (stripped).
 tangle:
@@ -125,8 +138,24 @@ else
 	done
 endif
 
-# --- Status: is every tangle fresh? ----------------------------------------
+# --- CHECK: status ----------------------------------------------------------
+# No org=  : report every org file.
+# org=NAME : report only that one. Exits nonzero if anything is not ok.
 status:
+ifdef org
+	@test -f $(ORG_DIR)/$(org:.org=).org || \
+	  { echo "no such file: $(ORG_DIR)/$(org:.org=).org"; exit 1; }
+	@set -e; bad=0; o=$(ORG_DIR)/$(org:.org=).org; \
+	echo "$$o"; \
+	targets=$$($(call manifest,$$o)); \
+	for t in $$targets; do \
+	  if   [ ! -f "$$t" ];      then echo "  MISSING $$t"; bad=1; \
+	  elif [ "$$o" -nt "$$t" ]; then echo "  STALE   $$t"; bad=1; \
+	  else                           echo "  ok      $$t"; fi; \
+	done; \
+	if [ $$bad -ne 0 ]; then echo 'status: NOT ok — re-tangle (make tangle)'; fi; \
+	exit $$bad
+else
 	@set -e; bad=0; \
 	for o in $(ORGS); do \
 	  echo "$$o"; \
@@ -139,19 +168,34 @@ status:
 	done; \
 	if [ $$bad -ne 0 ]; then echo 'status: NOT ok — re-tangle (make tangle)'; fi; \
 	exit $$bad
+endif
 
-# --- Run / Verify -----------------------------------------------------------
-run:
+# --- TRY: run and check -----------------------------------------------------
+# Launches the tangled tree via an explicit --init-directory. The check
+# is pre-flight: init.el MUST exist (per the Emacs manual, --init-directory
+# without init.el silently falls back to the default init file — i.e. the
+# legacy config; never launch the wrong Emacs), and stale tangles produce
+# a warning so you know you are trying an old build.
+#
+# opts=STRING passes STRING through verbatim to the emacs command line,
+# appended after --init-directory. Raw passthrough — quoting is yours.
+#   make try opts="--debug-init"     debugger + backtrace on init errors
+#   make try opts="--daemon"         daemon instead of a frame
+#   make try opts="-nw"             terminal instance
+try:
 	@test -f init.el || { echo 'error: no init.el — make tangle first.'; \
 	  echo '(--init-directory without init.el silently falls back to the'; \
 	  echo ' default init file; refusing to launch the wrong Emacs.)'; exit 1; }
-	$(EMACS) --init-directory="$(ROOT_DIR)"
+	@for o in $(ORGS); do \
+	  for t in $$($(call manifest,$$o)); do \
+	    if [ "$$o" -nt "$$t" ]; then \
+	      echo "warning: $$o newer than $$t — trying a stale build (make tangle)."; \
+	    fi; \
+	  done; \
+	done; true
+	$(EMACS) --init-directory="$(ROOT_DIR)" $(opts)
 
-verify:
-	@test -f init.el || { echo 'no init.el — make tangle first'; exit 1; }
-	$(EMACS_BATCH) --eval "(progn (setq user-emacs-directory (file-name-as-directory \"$(ROOT_DIR)\")) (load \"$(ROOT_DIR)/init.el\" nil t) (message \"verify: init.el loads cleanly\"))"
-
-# --- Install / Uninstall ----------------------------------------------------
+# --- INSTALL: install / uninstall ------------------------------------------
 # install makes this repo the default Emacs via one symlink at the XDG
 # slot (~/.config/emacs), which outranks any ~/.emacs.d. It refuses to
 # touch an occupied slot — moving the legacy config aside is a deliberate
@@ -178,22 +222,22 @@ uninstall:
 	  echo "$(DEST) is not ours — not touching it."; exit 1; \
 	fi
 
-# --- Detangle: the generated-source nuke ------------------------------------
-# The kill list IS the manifest. Survivors: org/ sources, makefile,
-# README.md, .gitignore — everything no :tangle header claims.
-# After detangle the tree is stock Emacs (no init.el at all).
-# Restore with: make tangle
-detangle:
+# --- CLEAN: tidy / clean ----------------------------------------------------
+# tidy removes every generated elisp file. The kill list IS the manifest.
+# Survivors: org/ sources, makefile, README.md, .gitignore — everything
+# no :tangle header claims. After tidy the tree is stock Emacs (no
+# init.el at all). Restore with: make tangle
+tidy:
 	@set -e; \
 	targets='$(ALL_TARGETS)'; \
 	test -n "$$targets" || { echo 'no :tangle targets found in any org'; exit 1; }; \
-	echo 'detangle: removing generated sources:'; \
+	echo 'tidy: removing generated sources:'; \
 	for t in $$targets; do echo "  $$t"; rm -f "$$t"; done; \
 	find . -mindepth 1 -type d -empty -not -name '.git' -delete; \
-	echo 'detangle: tree reduced to sources — stock Emacs until re-tangled.'
+	echo 'tidy: tree reduced to sources — stock Emacs until re-tangled.'
 
-# --- Clean: detangle + runtime state ----------------------------------------
-clean: detangle
+# clean = tidy + runtime state.
+clean: tidy
 	@set -e; \
 	for d in elpa eln-cache auto-save-list backup autosave; do \
 	  [ -e "$$d" ] && rm -rf "$$d" || true; \
