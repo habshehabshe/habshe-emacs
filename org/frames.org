@@ -8,11 +8,21 @@ suppression.
 
 Fonts: Adobe Courier for fixed-pitch faces, Adobe Helvetica for
 =variable-pitch= (both bitmap fonts with identical scaling on this
-machine). The old monospace-everywhere policy is retired —
-proportional text now renders proportionally. Default size 9pt,
-a real Courier bitmap size. Zoom steps one point and does not
-snap to bitmap sizes; fractional-looking intermediate sizes are
-synthesized scaling, accepted.
+machine). Default size 9pt, a real Courier bitmap size. Zoom steps
+one point and does not snap to bitmap sizes; intermediate sizes
+are synthesized scaling, accepted.
+
+Fonts are set with direct face attributes (=:family=, =:height=),
+never =font-spec=: =font-spec= has no =:height= property (its size
+keyword is =:size=, an integer meaning pixels or a float meaning
+points), and unknown keys are silently ignored — a spec with
+=:height= requests the family at fontconfig's default size, and
+=:font= then copies that opened size into the face. This bug is
+why the config once started at 12pt until zoom-reset.
+
+Only =default=, =fixed-pitch=, and =variable-pitch= are set
+directly. =italic=, =bold=, and =bold-italic= inherit family and
+height from =default= and carry their own weight/slant specs.
 
 One font size everywhere: after the theme loads, every named
 face's height is forced to the relative 1.0 — no face may declare
@@ -22,9 +32,7 @@ terminal. One known exception, investigated and left alone: the
 startup screen's copyright line carries an anonymous inline face
 spec =(variable-pitch (:height 0.8))= baked into the buffer text
 by =fancy-startup-tail= — not a named face, so normalization
-cannot reach it, and it is upstream's deliberate design. With
-variable-pitch as Helvetica the splash page now renders as
-intended.
+cannot reach it, and it is upstream's deliberate design.
 
 Frame *creation* settings (bar modes, resize pair) deliberately
 live in early-init, not here — they must be true before the first
@@ -46,10 +54,18 @@ frame is mapped or the bars flash. Do not migrate them down.
   ;; Adobe Courier for fixed-pitch faces, Adobe Helvetica for
   ;; variable-pitch. Both bitmap; Courier's real sizes on this machine
   ;; are 6, 8, 9, 11, 13, 14, 15, 18, 19, 26 — the default (9pt) is one
-  ;; of them. Only the default face carries the height; every other
-  ;; face gets the family only and is forced to the relative height 1.0
-  ;; below, so the whole instance is one size and zooming the default
-  ;; face resizes everything.
+  ;; of them.
+  ;;
+  ;; Set via direct face attributes, NOT font-spec: font-spec has no
+  ;; :height property (its size keyword is :size — integer pixels or
+  ;; float points), and unknown keys are silently stored as inert
+  ;; extras. A spec carrying :height requests the family at
+  ;; fontconfig's default size, and setting :font then copies that
+  ;; opened size into the face's :height — the startup-at-12pt bug.
+  ;; Face :height is an integer in 1/10 pt, matching our constants.
+  ;;
+  ;; Only these three faces are set directly; italic, bold, and
+  ;; bold-italic inherit family and height from default.
   (defconst my-frames-font-family "Adobe Courier"
     "Font family for fixed-pitch faces.")
 
@@ -66,22 +82,12 @@ frame is mapped or the bars flash. Do not migrate them down.
     "Font height change per zoom step, in 1/10 pt (one point).")
 
   (set-face-attribute 'default nil
-                      :font (font-spec :family my-frames-font-family
-                                       :height my-frames-font-height))
-  (set-face-attribute 'italic nil
-                      :font (font-spec :family my-frames-font-family
-                                       :slant 'italic))
-  (set-face-attribute 'bold nil
-                      :font (font-spec :family my-frames-font-family
-                                       :weight 'bold))
-  (set-face-attribute 'bold-italic nil
-                      :font (font-spec :family my-frames-font-family
-                                       :weight 'bold
-                                       :slant 'italic))
+                      :family my-frames-font-family
+                      :height my-frames-font-height)
   (set-face-attribute 'fixed-pitch nil
-                      :font (font-spec :family my-frames-font-family))
+                      :family my-frames-font-family)
   (set-face-attribute 'variable-pitch nil
-                      :font (font-spec :family my-frames-font-family-variable))
+                      :family my-frames-font-family-variable)
 
   ;; --- One font size everywhere --------------------------------------------
   ;; Themes and packages declare their own face heights (org headings
