@@ -1,0 +1,17 @@
+#+title: habshe-emacs — bootstrap
+#+author: A. Shehab (habshehabshe)
+
+* Placeholder
+
+This file is scaffolding: it exists so the build pipeline
+(=make tangle=, =make status=, =make verify=, =make run=) is
+exercisable end to end before the real module split is designed.
+It tangles exactly one target — =init.el= — which does nothing
+but prove the pipeline. Replace it when the real org modules
+land.
+
+#+begin_src emacs-lisp :tangle "../init.el"
+  ;;; init.el --- GENERATED from org/init.org — do not edit -*- lexical-binding: t; -*-
+  ;; Placeholder init: proves the tangle pipeline works.
+  (message "habshe-emacs: placeholder init.el loaded")
+#+end_srcSX
