@@ -1,0 +1,73 @@
+#+title: habshe-emacs — frames
+#+author: A. Shehab (habshehabshe)
+
+Everything frame-level by mechanism: theme (faces), fonts (face
+attributes applied with frame nil, which covers all future frames
+including daemon ones), frame title, and tooltip/dialog suppression.
+
+Frame *creation* settings (bar modes, resize pair) deliberately live
+in early-init, not here — they must be true before the first frame
+is mapped or the bars flash. Do not migrate them down.
+
+#+begin_src emacs-lisp :tangle "../lisp/my-frames.el"
+  ;;; my-frames.el --- GENERATED from org/frames.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: Frame-level appearance: theme, fonts, title,
+  ;;; tooltips and dialogs.
+
+  (defgroup my-frames nil
+    "Frame-level appearance for my Emacs configuration.")
+
+  ;; --- Theme ---------------------------------------------------------------
+  ;; Modus Operandi, the light variant, loaded via the safe mechanism.
+  (require-theme 'modus-themes)
+  (modus-themes-load-theme 'modus-operandi)
+
+  ;; --- Fonts ---------------------------------------------------------------
+  ;; Adobe Courier everywhere, monospace by policy — variable-pitch is
+  ;; set monospaced deliberately. Expressed as family + height rather
+  ;; than XLFD so the size is an adjustable axis and the name is
+  ;; portable; set-face-attribute with frame nil covers every future
+  ;; frame, daemon included. Height is 1/10 pt: 120 = 12pt, matching
+  ;; the legacy 12pt/75dpi bitmap size.
+  (defconst my-frames-font-family "Adobe Courier"
+    "Font family used for every face in my configuration.")
+
+  (defconst my-frames-font-height 120
+    "Default font height in 1/10 pt.")
+
+  (set-face-attribute 'default nil
+                      :font (font-spec :family my-frames-font-family
+                                       :height my-frames-font-height))
+  (set-face-attribute 'italic nil
+                      :font (font-spec :family my-frames-font-family
+                                       :height my-frames-font-height
+                                       :slant 'italic))
+  (set-face-attribute 'bold nil
+                      :font (font-spec :family my-frames-font-family
+                                       :height my-frames-font-height
+                                       :weight 'bold))
+  (set-face-attribute 'bold-italic nil
+                      :font (font-spec :family my-frames-font-family
+                                       :height my-frames-font-height
+                                       :weight 'bold
+                                       :slant 'italic))
+  (set-face-attribute 'fixed-pitch nil
+                      :font (font-spec :family my-frames-font-family
+                                       :height my-frames-font-height))
+  (set-face-attribute 'variable-pitch nil
+                      :font (font-spec :family my-frames-font-family
+                                       :height my-frames-font-height))
+
+  ;; --- Frame title ---------------------------------------------------------
+  ;; Static: buffer identity is displayed elsewhere; the title never
+  ;; needs to repeat it.
+  (setopt frame-title-format '("GNU Emacs"))
+
+  ;; --- Tooltips and dialogs ------------------------------------------------
+  ;; Help text renders in the echo area; prompts go to the minibuffer.
+  ;; Never a separate tooltip frame, never a GUI dialog box.
+  (tooltip-mode -1)
+  (setopt use-dialog-box nil)
+
+  (provide 'my-frames)
+#+end_src
