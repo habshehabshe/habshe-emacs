@@ -1,0 +1,26 @@
+#+title: habshe-emacs — yasnippet
+#+author: A. Shehab (habshehabshe)
+
+Yasnippet, globally active, with snippets sourced exclusively from
+this repository's tracked =snippets/= directory. The default
+snippet directories (the bundled collection and =~/.emacs.d/snippets=)
+are replaced, not appended — one place of truth for snippet content.
+
+#+begin_src emacs-lisp :tangle "../lisp/my-yasnippet.el"
+  ;;; my-yasnippet.el --- GENERATED from org/yasnippet.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: Yasnippet, global, snippets from our repo only.
+
+  (defgroup my-yasnippet nil
+    "Snippet expansion for my Emacs configuration.")
+
+  ;; Soft require: if the install pass could not run (e.g. no network
+  ;; on first boot), init survives without snippet expansion.
+  (when (require 'yasnippet nil t)
+    ;; Our directory only — replaces the bundled collection and the
+    ;; default ~/.emacs.d/snippets.
+    (setopt yas-snippet-dirs
+            (list (expand-file-name "snippets" user-emacs-directory)))
+    (yas-global-mode 1))
+
+  (provide 'my-yasnippet)
+#+end_src
