@@ -1,10 +1,16 @@
+# generated elisp (tangled from org/ — restore with: make tangle)
+/init.el
+/lisp/
+
 # emacs runtime state (regenerated, machine-specific)
+/elpa/
 /eln-cache/
 /auto-save-list/
 /backup/
 /autosave/
+/custom.el
 
 # emacs litter (autosaves, lockfiles)
 *~
-#*#
+\#*#
 .#*
