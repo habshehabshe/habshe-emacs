@@ -1,0 +1,10 @@
+# emacs runtime state (regenerated, machine-specific)
+/eln-cache/
+/auto-save-list/
+/backup/
+/autosave/
+
+# emacs litter (autosaves, lockfiles)
+*~
+#*#
+.#*
