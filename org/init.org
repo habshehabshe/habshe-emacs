@@ -1,17 +1,48 @@
 #+title: habshe-emacs — bootstrap
 #+author: A. Shehab (habshehabshe)
 
-* Placeholder
-
-This file is scaffolding: it exists so the build pipeline
-(=make tangle=, =make status=, =make verify=, =make run=) is
-exercisable end to end before the real module split is designed.
-It tangles exactly one target — =init.el= — which does nothing
-but prove the pipeline. Replace it when the real org modules
-land.
+The tangled init.el: custom-file relocation, the package system,
+and the explicit module load order. Load order is load-bearing:
+the package installer before any package's config module, and
+keybindings last, always.
 
 #+begin_src emacs-lisp :tangle "../init.el"
   ;;; init.el --- GENERATED from org/init.org — do not edit -*- lexical-binding: t; -*-
-  ;; Placeholder init: proves the tangle pipeline works.
-  (message "habshe-emacs: placeholder init.el loaded")
-#+end_srcSX
+
+  ;; --- Machine-local Customize state --------------------------------------
+  ;; custom-file keeps Customize-UI scribbles out of this generated file
+  ;; (which the next tangle would silently overwrite). setq is deliberate:
+  ;; cus-edit is not loaded yet, so `setopt' cannot see the option. The file
+  ;; is gitignored machine state; nothing in these modules may depend on
+  ;; its contents.
+  (setq custom-file (expand-file-name "custom.el" user-emacs-directory))
+  (when (file-exists-p custom-file)
+    (load custom-file t t))
+
+  ;; --- Package system -----------------------------------------------------
+  ;; Archives and priorities only. Installation is owned by my-packages;
+  ;; configuration by the individual my-* modules.
+  (require 'package)
+  (setopt package-archives
+          '(("gnu-elpa" . "https://elpa.gnu.org/packages/")
+            ("nongnu-elpa" . "https://elpa.nongnu.org/nongnu/")
+            ("melpa" . "https://melpa.org/packages/")))
+  (setopt package-archive-priorities
+          '(("gnu-elpa" . 3)
+            ("melpa" . 2)
+            ("nongnu-elpa" . 1)))
+  ;; Activate what is installed. early-init suppressed the automatic
+  ;; activation so it happens here, at our chosen point.
+  (package-activate-all)
+
+  ;; --- Modules -------------------------------------------------------------
+  ;; Order: installer first (so packages exist before their config
+  ;; modules load), then behavior modules; keybindings load last in a
+  ;; future pass because they reference commands from every module.
+  (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
+
+  (require 'my-packages)                   ; installs the manifest
+  (require 'my-files)                      ; litter redirection
+  (require 'my-windows)                    ; buffer display policy
+  (require 'my-editing)                    ; selection / line editing
+#+end_src
