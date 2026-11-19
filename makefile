@@ -34,8 +34,8 @@
 #     tangle means the target matches its source, and the touch asserts
 #     that in make semantics. Without it, mtime-only staleness could
 #     never be cleared by re-tangling.
-#   * No generated elisp is tracked. The repo is org/ + makefile +
-#     README.md + .gitignore; git status stays clean across tangle and
+#   * No generated elisp is tracked. The repo is org/ + snipptets/ + makefile
+#     + README.md + .gitignore; git status stays clean across tangle and
 #     tidy cycles. Fresh clone entry point: make tangle.
 # ==========================================================================
 
@@ -107,7 +107,7 @@ help:
 	@echo ''
 	@echo 'CLEAN'
 	@echo '  make tidy                remove every generated elisp file.'
-	@echo '                           Survivors: org/, makefile, README.md,'
+	@echo '                           Survivors: org/, snippets/, makefile, README.md,'
 	@echo '                           .gitignore. Stock Emacs until re-tangled.'
 	@echo '  make clean               tidy + wipe runtime state (elpa/,'
 	@echo '                           eln-cache/, backups, ...).'
