@@ -4,17 +4,22 @@
 Buffer-local display modes, globalized: line numbers, current-line
 highlight, and soft wrapping. Soft wrapping wraps at word boundaries
 (visual-line-mode implies word-wrap buffer-locally, so no explicit
-word-wrap is needed) and produces no fringe arrows — those are
-truncation artifacts, and wrapped lines never truncate.
+word-wrap is needed) and produces no fringe continuation arrows.
+Continuation arrows are their own fringe indicator — the continuation entry
+of fringe-indicator-alist — drawn on ordinary continued lines whenever
+visual-line-mode is off; they are not truncation artifacts.
+visual-line-mode suppresses them per buffer (visual-line-fringe-indicators,
+default (nil nil), draws nothing on wrapped lines), and it disables line
+truncation anyway, so no arrow of either kind can appear.
 
 The fill-column indicator and its interaction with visual-line-mode
 will be designed and added here in a later pass.
 
-#+begin_src emacs-lisp :tangle "../lisp/my-buffers.el"
-  ;;; my-buffers.el --- GENERATED from org/buffers.org — do not edit -*- lexical-binding: t; -*-
+#+begin_src emacs-lisp :tangle "../lisp/my-emacs-buffers.el"
+  ;;; my-emacs-buffers.el --- GENERATED from org/emacs-buffers.org — do not edit -*- lexical-binding: t; -*-
   ;;; Commentary: Buffer display: line numbers, highlight, wrapping.
 
-  (defgroup my-buffers nil
+  (defgroup my-emacs-buffers nil
     "Buffer display for my Emacs configuration.")
 
   ;; Line numbers in every buffer.
@@ -24,8 +29,8 @@ will be designed and added here in a later pass.
   (global-hl-line-mode 1)
 
   ;; Soft-wrap long lines at word boundaries. No mid-word breaks, no
-  ;; truncation, therefore no fringe continuation arrows.
+  ;; truncation, and no continuation arrows on wrapped lines.
   (global-visual-line-mode 1)
 
-  (provide 'my-buffers)
+  (provide 'my-emacs-buffers)
 #+end_src

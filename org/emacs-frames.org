@@ -38,12 +38,12 @@ Frame *creation* settings (bar modes, resize pair) deliberately
 live in early-init, not here — they must be true before the first
 frame is mapped or the bars flash. Do not migrate them down.
 
-#+begin_src emacs-lisp :tangle "../lisp/my-frames.el"
-  ;;; my-frames.el --- GENERATED from org/frames.org — do not edit -*- lexical-binding: t; -*-
+#+begin_src emacs-lisp :tangle "../lisp/my-emacs-frames.el"
+  ;;; my-emacs-frames.el --- GENERATED from org/emacs-frames.org — do not edit -*- lexical-binding: t; -*-
   ;;; Commentary: Frame-level appearance: theme, fonts, title,
   ;;; tooltips and dialogs. One font size everywhere.
 
-  (defgroup my-frames nil
+  (defgroup my-emacs-frames nil
     "Frame-level appearance for my Emacs configuration.")
 
   ;; --- Theme ---------------------------------------------------------------
@@ -66,28 +66,28 @@ frame is mapped or the bars flash. Do not migrate them down.
   ;;
   ;; Only these three faces are set directly; italic, bold, and
   ;; bold-italic inherit family and height from default.
-  (defconst my-frames-font-family "Adobe Courier"
+  (defconst my-font-family "Adobe Courier"
     "Font family for fixed-pitch faces.")
 
-  (defconst my-frames-font-family-variable "Adobe Helvetica"
+  (defconst my-variable-pitch-font-family "Adobe Helvetica"
     "Font family for the variable-pitch face.")
 
-  (defconst my-frames-font-height-default 90
+  (defconst my-font-height-default 90
     "Default global font height in 1/10 pt (9pt, a real Courier bitmap size).")
 
-  (defvar my-frames-font-height my-frames-font-height-default
+  (defvar my-font-height my-font-height-default
     "Global font height in 1/10 pt. The only font-size knob.")
 
-  (defconst my-frames-font-height-step 10
+  (defconst my-font-height-step 10
     "Font height change per zoom step, in 1/10 pt (one point).")
 
   (set-face-attribute 'default nil
-                      :family my-frames-font-family
-                      :height my-frames-font-height)
+                      :family my-font-family
+                      :height my-font-height)
   (set-face-attribute 'fixed-pitch nil
-                      :family my-frames-font-family)
+                      :family my-font-family)
   (set-face-attribute 'variable-pitch nil
-                      :family my-frames-font-family-variable)
+                      :family my-variable-pitch-font-family)
 
   ;; --- One font size everywhere --------------------------------------------
   ;; Themes and packages declare their own face heights (org headings
@@ -96,7 +96,7 @@ frame is mapped or the bars flash. Do not migrate them down.
   ;; face. (The startup screen's copyright uses an anonymous inline
   ;; face spec, not a named face — deliberately out of reach; see the
   ;; module prose.)
-  (defun my-frames-normalize-face-heights ()
+  (defun my-normalize-face-heights ()
     "Force every named face to the default face's height.
 Sets each face's :height to the relative 1.0, overriding whatever
 the theme or a package declared. Re-run after lazily loading a
@@ -107,42 +107,42 @@ package that introduces rogue face heights."
         (ignore-errors
           (set-face-attribute face nil :height 1.0)))))
 
-  (my-frames-normalize-face-heights)
+  (my-normalize-face-heights)
   ;; Faces defined later during init, and org's heading faces (org
   ;; loads lazily), get the same treatment.
-  (add-hook 'after-init-hook #'my-frames-normalize-face-heights)
-  (with-eval-after-load 'org #'my-frames-normalize-face-heights)
+  (add-hook 'after-init-hook #'my-normalize-face-heights)
+  (with-eval-after-load 'org #'my-normalize-face-heights)
 
   ;; --- Zoom ------------------------------------------------------------------
   ;; Terminal-style: one knob, everything resizes at once.
-  (defun my-frames-apply-font-height ()
-    "Apply `my-frames-font-height' to the default face."
-    (set-face-attribute 'default nil :height my-frames-font-height))
+  (defun my-apply-font-height ()
+    "Apply `my-font-height' to the default face."
+    (set-face-attribute 'default nil :height my-font-height))
 
-  (defun my-frames-zoom-in (&optional arg)
+  (defun my-zoom-in (&optional arg)
     "Increase the global font height by ARG steps (default 1).
 Every face scales at once, like a terminal zoom."
     (interactive "p")
-    (setq my-frames-font-height
-          (+ my-frames-font-height
-             (* my-frames-font-height-step (or arg 1))))
-    (my-frames-apply-font-height))
+    (setq my-font-height
+          (+ my-font-height
+             (* my-font-height-step (or arg 1))))
+    (my-apply-font-height))
 
-  (defun my-frames-zoom-out (&optional arg)
+  (defun my-zoom-out (&optional arg)
     "Decrease the global font height by ARG steps (default 1).
 Never below one point."
     (interactive "p")
-    (setq my-frames-font-height
-          (max my-frames-font-height-step
-               (- my-frames-font-height
-                  (* my-frames-font-height-step (or arg 1)))))
-    (my-frames-apply-font-height))
+    (setq my-font-height
+          (max my-font-height-step
+               (- my-font-height
+                  (* my-font-height-step (or arg 1)))))
+    (my-apply-font-height))
 
-  (defun my-frames-zoom-reset ()
+  (defun my-zoom-reset ()
     "Reset the global font height to the default 9pt."
     (interactive)
-    (setq my-frames-font-height my-frames-font-height-default)
-    (my-frames-apply-font-height))
+    (setq my-font-height my-font-height-default)
+    (my-apply-font-height))
 
   ;; --- Frame title ---------------------------------------------------------
   ;; Static: buffer identity is displayed elsewhere; the title never
@@ -155,5 +155,5 @@ Never below one point."
   (tooltip-mode -1)
   (setopt use-dialog-box nil)
 
-  (provide 'my-frames)
+  (provide 'my-emacs-frames)
 #+end_src

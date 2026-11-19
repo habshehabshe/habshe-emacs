@@ -28,11 +28,11 @@ headroom for the init phase.
   ;; GC headroom while init runs; restored once init is done.
   (setq gc-cons-threshold most-positive-fixnum)
 
-  (defun my-early-init--restore-gc ()
+  (defun my-restore-gc ()
     "Restore the garbage collector after initialization.
 The conservative default suits interactive editing far better
 than the unbounded threshold used during startup."
     (setq gc-cons-threshold 800000))
 
-  (add-hook 'after-init-hook #'my-early-init--restore-gc)
+  (add-hook 'after-init-hook #'my-restore-gc)
 #+end_src

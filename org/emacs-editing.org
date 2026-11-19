@@ -1,30 +1,21 @@
 #+title: habshe-emacs — editing behavior
 #+author: A. Shehab (habshehabshe)
 
-How text gets edited: typing replaces the active selection,
-kill/copy commands fall back to the whole current line when no
-region is active, and a dedicated command deletes lines outright
-— deleted, not cut.
+How text gets edited: typing replaces the active selection, and a 
+dedicated command deletes lines outright — deleted, not cut
 
-#+begin_src emacs-lisp :tangle "../lisp/my-editing.el"
-  ;;; my-editing.el --- GENERATED from org/editing.org — do not edit -*- lexical-binding: t; -*-
-  ;;; Commentary: Selection replacement, whole-line kill/copy, hard
-  ;;; line deletion.
+#+begin_src emacs-lisp :tangle "../lisp/my-emacs-editing.el"
+  ;;; my-emacs-editing.el --- GENERATED from org/emacs-editing.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: Selection replacement and hard line deletion.
 
-  (defgroup my-editing nil
+  (defgroup my-emacs-editing nil
     "Editing behavior for my Emacs configuration.")
 
   ;; Typing or yanking over an active selection deletes it first.
   (delete-selection-mode 1)
 
-  ;; C-w, M-w, comment-dwim etc. operate on the current real line when
-  ;; no region is active. whole-line-or-region is an external package;
-  ;; degrade gracefully if the install pass could not run (e.g. no
-  ;; network on first boot) rather than break all of init.
-  (when (require 'whole-line-or-region nil t)
-    (whole-line-or-region-global-mode 1))
 
-  (defun my-editing-delete-line (&optional arg)
+  (defun my-delete-line (&optional arg)
     "Delete ARG lines starting at point, without the kill ring.
 Unlike `kill-whole-line', the text is gone for good: it never
 enters the kill ring and cannot be yanked back. Point is left at
@@ -35,18 +26,18 @@ the start of the line following the deleted text."
                      (forward-line (or arg 1))
                      (point))))
 
-  (defun my-editing-delete-to-beginning-of-line ()
+  (defun my-delete-to-beginning-of-line ()
     "Delete from point to the beginning of the line, without the kill ring.
 The deleted text cannot be yanked back."
     (interactive)
     (delete-region (line-beginning-position) (point)))
 
-  (defun my-editing-delete-to-end-of-line ()
+  (defun my-delete-to-end-of-line ()
     "Delete from point to the end of the line, without the kill ring.
 Covers the same span as `kill-line' would, but the text is gone for
 good and cannot be yanked back."
     (interactive)
     (delete-region (point) (line-end-position)))
 
-  (provide 'my-editing)
+  (provide 'my-emacs-editing)
 #+end_src

@@ -35,7 +35,7 @@ Placement note: the variables here are buffer-named
 mechanism is window management — =display-buffer= answers "which
 window shows this buffer", the functions live in =window.el=,
 and the manual covers them in the Windows chapter. Hence this
-module, not my-buffers.
+module, not my-emacs-buffers.
 
 Entry format, for the record: each =display-buffer-alist= entry
 is =(REGEXP . ACTION)= where ACTION is =(FUNCTIONS-LIST .
@@ -47,12 +47,12 @@ Direct =split-window= calls from package code bypass
 =display-buffer= entirely; if one is ever observed, advise
 =split-window= rather than weakening this policy.
 
-#+begin_src emacs-lisp :tangle "../lisp/my-windows.el"
-  ;;; my-windows.el --- GENERATED from org/windows.org — do not edit -*- lexical-binding: t; -*-
+#+begin_src emacs-lisp :tangle "../lisp/my-emacs-windows.el"
+  ;;; my-emacs-windows.el --- GENERATED from org/emacs-windows.org — do not edit -*- lexical-binding: t; -*-
   ;;; Commentary: Absolute no-split display policy. One window per
   ;;; frame, always.
 
-  (defgroup my-windows nil
+  (defgroup my-emacs-windows nil
     "Window and buffer display policy for my Emacs configuration.")
 
   ;; The one display action, in the canonical action shape:
@@ -69,7 +69,7 @@ Direct =split-window= calls from package code bypass
   ;; The terminator matters: without use-some-window, a minibuffer
   ;; display (completions) exhausts the first two, and the caller's
   ;; own action — at-bottom / below-selected — splits.
-  (defconst my-windows-display-action
+  (defconst my-window-display-action
     '((display-buffer-reuse-window
        display-buffer-same-window
        display-buffer-use-some-window) . nil)
@@ -82,9 +82,9 @@ pop up a frame.")
   ;; caller's own actions (completions' at-bottom, help's
   ;; pop-ups) are never reached.
   (setopt display-buffer-alist
-          `((".*" . ,my-windows-display-action)))
-  (setopt display-buffer-base-action my-windows-display-action)
-  (setopt display-buffer-fallback-action my-windows-display-action)
+          `((".*" . ,my-window-display-action)))
+  (setopt display-buffer-base-action my-window-display-action)
+  (setopt display-buffer-fallback-action my-window-display-action)
 
-  (provide 'my-windows)
+  (provide 'my-emacs-windows)
 #+end_src

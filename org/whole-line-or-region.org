@@ -1,0 +1,24 @@
+#+title: habshe-emacs — whole-line-or-region
+#+author: A. Shehab (habshehabshe)
+
+Configuration of the external package whole-line-or-region: with no
+region active, kill and copy commands (C-w, M-w, comment-dwim, ...)
+operate on the current real line instead. Installation is owned by
+the package manifest in my-emacs-packages; this module only
+configures.
+
+#+begin_src emacs-lisp :tangle "../lisp/my-whole-line-or-region.el"
+  ;;; my-whole-line-or-region.el --- GENERATED from org/whole-line-or-region.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: whole-line-or-region: whole-line kill/copy fallback.
+
+  (defgroup my-whole-line-or-region nil
+    "whole-line-or-region configuration for my Emacs configuration.")
+
+  ;; Soft require: if the install pass could not run (e.g. no network
+  ;; on first boot), init survives without the whole-line fallback
+  ;; rather than breaking.
+  (when (require 'whole-line-or-region nil t)
+    (whole-line-or-region-global-mode 1))
+
+  (provide 'my-whole-line-or-region)
+#+end_src

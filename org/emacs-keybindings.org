@@ -18,12 +18,12 @@ zoom, whose inner keys (=+=, =-=, ===, and their numpad twins
 This module loads last: it references commands from every other
 module.
 
-#+begin_src emacs-lisp :tangle "../lisp/my-keybindings.el"
-  ;;; my-keybindings.el --- GENERATED from org/keybindings.org — do not edit -*- lexical-binding: t; -*-
+#+begin_src emacs-lisp :tangle "../lisp/my-emacs-keybindings.el"
+  ;;; my-emacs-keybindings.el --- GENERATED from org/emacs-keybindings.org — do not edit -*- lexical-binding: t; -*-
   ;;; Commentary: The C-M-s (Ctrl+Meta+super) reserved prefix: full
   ;;; chords for commands, a real sub-prefix for zoom, repeat-mode.
 
-  (defgroup my-keybindings nil
+  (defgroup my-emacs-keybindings nil
     "Keybindings for my Emacs configuration.")
 
   ;; --- Direct chords ---------------------------------------------------------
@@ -31,9 +31,9 @@ module.
   ;; none collide with any default binding.
 
   ;; Editing: line deletion.
-  (keymap-global-set "C-M-s-\\" #'my-editing-delete-line)
-  (keymap-global-set "C-M-s-<backspace>" #'my-editing-delete-to-beginning-of-line)
-  (keymap-global-set "C-M-s-<delete>" #'my-editing-delete-to-end-of-line)
+  (keymap-global-set "C-M-s-\\" #'my-delete-line)
+  (keymap-global-set "C-M-s-<backspace>" #'my-delete-to-beginning-of-line)
+  (keymap-global-set "C-M-s-<delete>" #'my-delete-to-end-of-line)
 
   ;; Motion: file-wide.
   (keymap-global-set "C-M-s-<home>" #'beginning-of-buffer)
@@ -48,25 +48,25 @@ module.
   ;; Inner keys zoom; both row and numpad keysyms are bound. The same
   ;; map serves as the repeat map, so after any zoom command the
   ;; inner keys work bare.
-  (defvar my-keybindings-zoom-map
+  (defvar my-zoom-map
     (define-keymap
-      "+"  #'my-frames-zoom-in
-      "-"  #'my-frames-zoom-out
-      "="  #'my-frames-zoom-reset
-      "<kp-add>"     #'my-frames-zoom-in
-      "<kp-subtract>" #'my-frames-zoom-out
-      "<kp-equal>"   #'my-frames-zoom-reset)
+      "+"  #'my-zoom-in
+      "-"  #'my-zoom-out
+      "="  #'my-zoom-reset
+      "<kp-add>"     #'my-zoom-in
+      "<kp-subtract>" #'my-zoom-out
+      "<kp-equal>"   #'my-zoom-reset)
     "Zoom keymap: bound to C-M-s-z, and the zoom repeat map.")
 
-  (keymap-global-set "C-M-s-z" my-keybindings-zoom-map)
+  (keymap-global-set "C-M-s-z" my-zoom-map)
 
   ;; --- Repeat mode -----------------------------------------------------------
   ;; After a zoom command, + - = repeat without the prefix.
-  (put 'my-frames-zoom-in    'repeat-map 'my-keybindings-zoom-map)
-  (put 'my-frames-zoom-out   'repeat-map 'my-keybindings-zoom-map)
-  (put 'my-frames-zoom-reset 'repeat-map 'my-keybindings-zoom-map)
+  (put 'my-zoom-in    'repeat-map 'my-zoom-map)
+  (put 'my-zoom-out   'repeat-map 'my-zoom-map)
+  (put 'my-zoom-reset 'repeat-map 'my-zoom-map)
 
   (repeat-mode 1)
 
-  (provide 'my-keybindings)
+  (provide 'my-emacs-keybindings)
 #+end_src

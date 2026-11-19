@@ -20,7 +20,7 @@ keybindings last, always.
     (load custom-file t t))
 
   ;; --- Package system -----------------------------------------------------
-  ;; Archives and priorities only. Installation is owned by my-packages;
+  ;; Archives and priorities only. Installation is owned by my-emacs-packages;
   ;; configuration by the individual my-* modules.
   (require 'package)
   (setopt package-archives
@@ -41,12 +41,13 @@ keybindings last, always.
   ;; future pass because they reference commands from every module.
   (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
-  (require 'my-packages)                   ; installs the manifest
-  (require 'my-files)                      ; litter redirection
-  (require 'my-frames)                     ; theme, fonts, title, tooltips
-  (require 'my-buffers)                    ; line numbers, highlight, wrapping
-  (require 'my-windows)                    ; buffer display policy
-  (require 'my-editing)                    ; selection / line editing
+  (require 'my-emacs-packages)             ; installs the manifest
+  (require 'my-emacs-files)                ; litter redirection
+  (require 'my-emacs-frames)               ; theme, fonts, title, tooltips
+  (require 'my-emacs-buffers)              ; line numbers, highlight, wrapping
+  (require 'my-emacs-windows)              ; buffer display policy
+  (require 'my-emacs-editing)              ; selection / line editing
+  (require 'my-whole-line-or-region)       ; whole-line kill/copy fallback
   (require 'my-yasnippet)                  ; snippet expansion
-  (require 'my-keybindings)                ; the C-M-S-s prefix — always last
-#+end_src
+  (require 'my-emacs-keybindings)          ; the C-M-S-s prefix — always last
+  #+end_src
