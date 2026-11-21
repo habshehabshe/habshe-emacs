@@ -1,71 +1,112 @@
 #+title: habshe-emacs — keybindings
 #+author: A. Shehab (habshehabshe)
 
-All our bindings, and only our bindings. Emacs default keybindings
-are never changed — and with the capslock prefix this costs
-nothing: capslock emits Ctrl+Meta+super, and every chord carrying
-the super modifier (=C-M-s-<key>= in key-string notation, where
-=s-= before a key means super) is unbound in default Emacs.
+All our bindings, and only our bindings. Emacs defaults are never
+changed: capslock emits Ctrl+Meta+super, and every chord carrying
+the super modifier (C-M-s-<key>) is unbound by default Emacs.
 
-Because a pure modifier stack generates no key event of its own,
-there is no prefix keymap for the capslock chords — each binding
-is one full global chord. The exception is =C-M-s-z=: capslock+z
-is a complete event, so it carries a real sub-prefix keymap for
-zoom, whose inner keys (=+=, =-=, ===, and their numpad twins
-=<kp-add>=, =<kp-subtract>=, =<kp-equal>=) are repeatable via
-=repeat-mode= — after =caps,z +=, bare =+= repeats.
+Bindings are a trie. A node either holds an action or is a prefix
+to children; where both are wanted, the action lives at RET:
+
+  * A leaf fires on its own key - the enter is inferred. caps+\
+    deletes the line outright.
+  * A node with children reserves its other keys for them; its own
+    action sits at RET. caps+b enters the buffer layer; caps+b
+    then RET switches buffers.
+  * Movement keys act immediately and arm a repeat tail: further
+    bare home/end/prior/next keep moving, and RET ends the
+    session - silently, because our repeat maps bind RET to
+    ignore, a command with no repeat-map property. Stock repeat
+    sessions are untouched by this.
+
+The topology is object-first: objects sit directly under CAPS
+(buffers, files, region, ...), because common commands are one
+level down from their object. The deterministic placement of an
+action is its canonical binding (line deletion canonically lives
+at caps+l then delete); a common action may be hoisted to a
+shorter chord (caps+\) - a deliberate shortcut, always recorded
+here, never displacing the canonical spot.
 
 This module loads last: it references commands from every other
 module.
 
 #+begin_src emacs-lisp :tangle "../lisp/my-emacs-keybindings.el"
   ;;; my-emacs-keybindings.el --- GENERATED from org/emacs-keybindings.org — do not edit -*- lexical-binding: t; -*-
-  ;;; Commentary: The C-M-s (Ctrl+Meta+super) reserved prefix: full
-  ;;; chords for commands, a real sub-prefix for zoom, repeat-mode.
+  ;;; Commentary: The C-M-s prefix trie and the completion menu keys.
 
   (defgroup my-emacs-keybindings nil
     "Keybindings for my Emacs configuration.")
 
-  ;; --- Direct chords ---------------------------------------------------------
-  ;; Every capslock chord is a full event with the super modifier;
-  ;; none collide with any default binding.
-
-  ;; Editing: line deletion.
+  ;; --- Leaves: no children, enter inferred ------------------------
+  ;; Editing: line deletion. Canonical: caps+l then delete; hoisted.
   (keymap-global-set "C-M-s-\\" #'my-delete-line)
   (keymap-global-set "C-M-s-<backspace>" #'my-delete-to-beginning-of-line)
   (keymap-global-set "C-M-s-<delete>" #'my-delete-to-end-of-line)
 
-  ;; Motion: file-wide.
-  (keymap-global-set "C-M-s-<home>" #'beginning-of-buffer)
-  (keymap-global-set "C-M-s-<end>" #'end-of-buffer)
+  ;; --- Buffer layer: caps+b ----------------------------------------
+  (defvar my-buffer-map
+    (define-keymap
+      "RET"     #'switch-to-buffer
+      "<home>"  #'beginning-of-buffer
+      "<end>"   #'end-of-buffer
+      "<prior>" #'next-buffer
+      "<next>"  #'previous-buffer)
+    "The buffer layer: RET switches buffers, the rest move.")
 
-  ;; Buffer switching.
-  (keymap-global-set "C-M-s-<prior>" #'next-buffer)
-  (keymap-global-set "C-M-s-<next>" #'previous-buffer)
+  ;; The repeat tail is the same map with RET neutered: ignore has
+  ;; no repeat-map property, so pressing it ends the session and
+  ;; runs nothing. Scoped to this map - no global option involved.
+  (defvar my-buffer-repeat-map
+    (let ((map (copy-keymap my-buffer-map)))
+      (keymap-set map "RET" #'ignore)
+      map)
+    "Repeat map for buffer movement. RET terminates the session.")
 
-  ;; --- Zoom sub-prefix -------------------------------------------------------
-  ;; capslock+z is a complete event, so it can hold a real keymap.
-  ;; Inner keys zoom; both row and numpad keysyms are bound. The same
-  ;; map serves as the repeat map, so after any zoom command the
-  ;; inner keys work bare.
+  (dolist (cmd '(beginning-of-buffer end-of-buffer
+                 next-buffer previous-buffer))
+    (put cmd 'repeat-map 'my-buffer-repeat-map))
+
+  (keymap-global-set "C-M-s-b" my-buffer-map)
+
+  ;; --- File layer: caps+f -------------------------------------------
+  ;; Reserved for file navigation and creation. Design pending.
+  (keymap-global-set "C-M-s-f" #'ignore)
+
+  ;; --- Zoom layer: caps+z -------------------------------------------
+  ;; A pure prefix - children are leaves, no action at z. The same
+  ;; map serves as the repeat tail; RET is ignore, so a zoom
+  ;; session also ends silently.
   (defvar my-zoom-map
     (define-keymap
-      "+"  #'my-zoom-in
-      "-"  #'my-zoom-out
-      "="  #'my-zoom-reset
-      "<kp-add>"     #'my-zoom-in
-      "<kp-subtract>" #'my-zoom-out
-      "<kp-equal>"   #'my-zoom-reset)
+      "+"             #'my-zoom-in
+      "-"             #'my-zoom-out
+      "="             #'my-zoom-reset
+      "RET"           #'ignore)
     "Zoom keymap: bound to C-M-s-z, and the zoom repeat map.")
 
   (keymap-global-set "C-M-s-z" my-zoom-map)
 
-  ;; --- Repeat mode -----------------------------------------------------------
-  ;; After a zoom command, + - = repeat without the prefix.
   (put 'my-zoom-in    'repeat-map 'my-zoom-map)
   (put 'my-zoom-out   'repeat-map 'my-zoom-map)
   (put 'my-zoom-reset 'repeat-map 'my-zoom-map)
 
+  ;; --- Minibuffer completion map: the menu surface ------------------
+  ;; Focus lives in the minibuffer (completion-auto-select nil in
+  ;; my-emacs-completions), so the menu keys bind here. One map
+  ;; suffices: minibuffer-local-must-match-map inherits it. Plain arrows
+  ;; are stock minibuffer keys (up/down line-or-history, left/right
+  ;; within the input). The single-column menu makes line and candidate
+  ;; motion the same thing, so all four M-arrows bind the stock motion
+  ;; commands: up/left previous candidate, down/right next. M-RET is
+  ;; stock: minibuffer-choose-completion, the selected candidate.
+  ;; M-insert pulls the selection into the input (ours).
+  (keymap-set minibuffer-local-completion-map "M-<insert>" #'my-completions-insert-selection)
+  (keymap-set minibuffer-local-completion-map "M-<down>"   #'minibuffer-next-completion)
+  (keymap-set minibuffer-local-completion-map "M-<up>"     #'minibuffer-previous-completion)
+  (keymap-set minibuffer-local-completion-map "M-<right>"  #'minibuffer-next-completion)
+  (keymap-set minibuffer-local-completion-map "M-<left>"   #'minibuffer-previous-completion)
+
+  ;; --- Repeat mode ----------------------------------------------------
   (repeat-mode 1)
 
   (provide 'my-emacs-keybindings)
