@@ -1,0 +1,50 @@
+#+title: habshe-emacs — marginalia
+#+author: A. Shehab (habshehabshe)
+
+Marginalia annotates the menu: metadata per candidate, keyed by
+completion category - buffer, file, command, and our own
+categories to come. Annotations are a view; marginalia-cycle
+rotates between more, less, and none.
+
+#+begin_src emacs-lisp :tangle "../lisp/my-marginalia.el"
+  ;;; my-marginalia.el --- GENERATED from org/marginalia.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: Marginalia: metadata annotations in the menu.
+
+  (defgroup my-marginalia nil
+    "Completion annotations for my Emacs configuration.")
+
+  (when (require 'marginalia nil t)
+    (marginalia-mode 1)
+
+    (defun my-annotate-buffer (candidate)
+      "Annotate buffer CANDIDATE: major mode, RW/RO, modified marker.
+Fields render as marginalia columns: the mode in a
+fixed-width column (left-flush, capped with an ellipsis),
+then the permission pair, then the modified marker.
+Non-buffer candidates (anything `get-buffer' does not
+know) get no annotation."
+      (when-let ((buffer (get-buffer candidate)))
+        (marginalia--fields
+          ((string-remove-suffix
+            "-mode" (symbol-name
+                     (buffer-local-value 'major-mode buffer)))
+           :width 24 :truncate 24)
+          ((if (buffer-local-value 'buffer-read-only buffer)
+               "RO" "RW")
+           :width 3)
+          ((if (buffer-modified-p buffer) "*" "")))))
+
+    ;; Ahead of the default annotator for the buffer category - the
+    ;; category `switch-to-buffer' presents - so ours is the
+    ;; annotation and marginalia-cycle rotates to the default,
+    ;; builtin, and none.
+    (setopt marginalia-annotators
+            (mapcar (lambda (entry)
+                      (if (eq (car entry) 'buffer)
+                          (append '(buffer my-annotate-buffer)
+                                  (cdr entry))
+                        entry))
+                    marginalia-annotators)))
+
+  (provide 'my-marginalia)
+#+end_src

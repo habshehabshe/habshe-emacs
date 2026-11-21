@@ -48,6 +48,9 @@ keybindings last, always.
   (require 'my-emacs-windows)              ; buffer display policy
   (require 'my-emacs-editing)              ; selection / line editing
   (require 'my-whole-line-or-region)       ; whole-line kill/copy fallback
+  (require 'my-emacs-completions)          ; the completion menu
+  (require 'my-orderless)                  ; fuzzy matching
+  (require 'my-marginalia)                 ; menu annotations
   (require 'my-yasnippet)                  ; snippet expansion
   (require 'my-emacs-keybindings)          ; the C-M-S-s prefix — always last
   #+end_src

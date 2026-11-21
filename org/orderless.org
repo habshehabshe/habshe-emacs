@@ -1,0 +1,22 @@
+#+title: habshe-emacs — orderless
+#+author: A. Shehab (habshehabshe)
+
+Orderless is the fuzzy matcher: space-separated patterns matched
+in any order, in every menu. It is a completion style - a matcher
+- not an interface; the interface is the completion buffer owned
+by my-emacs-completions.
+
+#+begin_src emacs-lisp :tangle "../lisp/my-orderless.el"
+  ;;; my-orderless.el --- GENERATED from org/orderless.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: Orderless: fuzzy any-order matching for every menu.
+
+  (defgroup my-orderless nil
+    "Fuzzy matching for my Emacs configuration.")
+
+  ;; Soft require: if the install pass could not run, completion
+  ;; falls back to the default styles instead of breaking.
+  (when (require 'orderless nil t)
+    (setopt completion-styles '(orderless basic)))
+
+  (provide 'my-orderless)
+#+end_src

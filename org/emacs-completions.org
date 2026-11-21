@@ -1,0 +1,91 @@
+#+title: habshe-emacs — completions
+#+author: A. Shehab (habshehabshe)
+
+The completion buffer is the one menu interface: every prompt in
+Emacs, minibuffer and in-buffer alike, renders its candidates into
+*Completions*, and every menu we build is a command feeding it a
+table. This module owns how that buffer behaves, and the commands
+bound to it in my-emacs-keybindings.
+
+The loop: type to filter (orderless does the matching), TAB to
+complete - uniquely, straight to the candidate; else the list
+shows. Focus never leaves the minibuffer (completion-auto-select
+nil), and moving the list cursor never touches the input
+(minibuffer-completion-auto-choose nil): M-insert pulls the
+selected candidate in for editing, M-RET runs it outright.
+
+Two views: the compact multicolumn list (default) and the single
+column with metadata. M-m toggles. The default is a defcustom.
+
+#+begin_src emacs-lisp :tangle "../lisp/my-emacs-completions.el"
+  ;;; my-emacs-completions.el --- GENERATED from org/emacs-completions.org — do not edit -*- lexical-binding: t; -*-
+  ;;; Commentary: The completion buffer as the one menu interface.
+
+  (defgroup my-emacs-completions nil
+    "Completion display for my Emacs configuration.")
+
+  ;; Focus never leaves the minibuffer: TAB filters and shows the
+  ;; list; entering the list is not a thing that happens.
+  (setopt completion-auto-select nil)
+  ;; Once shown, the menu stays up for the whole prompt.
+  (setopt completion-auto-help 'always)
+  ;; Moving the list cursor never touches the input.
+  (setopt minibuffer-completion-auto-choose nil)
+  ;; No height cap: under the no-split alist the menu takes the window.
+  (setopt completions-max-height nil)
+  ;; Our tables define their order; the display does not re-sort it.
+  (setopt completions-sort nil)
+  ;; The menu documents its own action surface; the stock help lines die.
+  (setopt completion-show-help nil)
+  (setopt completions-header-format
+          (concat (propertize "TAB" 'face 'help-key-binding)
+                  " filter  "
+                  (propertize "M-<arrows>" 'face 'help-key-binding)
+                  " move  "
+                  (propertize "M-<insert>" 'face 'help-key-binding)
+                  " insert  "
+                  (propertize "M-RET" 'face 'help-key-binding)
+                  " select\n"
+                  "\n"
+                  (propertize "%s candidates\n" 'face 'shadow)))
+
+  (defun my-completions-insert-selection ()
+    "Insert the selected candidate into the minibuffer.
+The input becomes editable and the prompt stays open; the
+completions window stays up. This is stock
+`minibuffer-choose-completion' with NO-EXIT and NO-QUIT."
+    (interactive)
+    (minibuffer-choose-completion t t))
+
+  ;; --- List cursor movement ------------------------------------------
+  ;; M-arrows move the selection in the completion window, never the
+  ;; input (minibuffer-completion-auto-choose nil). Down and up move
+  ;; by line (a grid line holds several candidates); left and right
+  ;; are bound in my-emacs-keybindings to the stock commands, which
+  ;; are exactly horizontal candidate motion. completion-auto-wrap is
+  ;; t, so grid motion wraps at the edges.
+
+  (defun my-completions-next-line ()
+    "Move the completion list cursor down one line.
+Stock `minibuffer-next-completion' with VERTICAL: line motion in
+the completion window, input untouched."
+    (interactive)
+    (minibuffer-next-completion nil t))
+
+  (defun my-completions-previous-line ()
+    "Move the completion list cursor up one line.
+Stock has no vertical previous from the minibuffer, so this runs
+`previous-line-completion' in the completion window itself. The
+argument matters: the stock command computes (- N), and a nil N
+from a plain Lisp call errors - pass 1."
+    (interactive)
+    (let ((window (get-buffer-window "*Completions*" 0)))
+      (if (not window)
+          (user-error "No completion window")
+        (with-selected-window window
+          (when completions-highlight-face
+            (setq-local cursor-face-highlight-nonselected-window t))
+          (previous-line-completion 1)))))
+
+  (provide 'my-emacs-completions)
+#+end_src
