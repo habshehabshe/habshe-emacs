@@ -9,7 +9,6 @@ keybindings last, always.
 #+begin_src emacs-lisp :tangle "../init.el"
   ;;; init.el --- GENERATED from org/init.org — do not edit -*- lexical-binding: t; -*-
 
-  ;; --- Machine-local Customize state --------------------------------------
   ;; custom-file keeps Customize-UI scribbles out of this generated file
   ;; (which the next tangle would silently overwrite). setq is deliberate:
   ;; cus-edit is not loaded yet, so `setopt' cannot see the option. The file
@@ -19,7 +18,6 @@ keybindings last, always.
   (when (file-exists-p custom-file)
     (load custom-file t t))
 
-  ;; --- Package system -----------------------------------------------------
   ;; Archives and priorities only. Installation is owned by my-emacs-packages;
   ;; configuration by the individual my-* modules.
   (require 'package)
@@ -35,10 +33,9 @@ keybindings last, always.
   ;; activation so it happens here, at our chosen point.
   (package-activate-all)
 
-  ;; --- Modules -------------------------------------------------------------
   ;; Order: installer first (so packages exist before their config
-  ;; modules load), then behavior modules; keybindings load last in a
-  ;; future pass because they reference commands from every module.
+  ;; modules load), then behavior modules; keybindings load last
+  ;; because they reference commands from every module.
   (add-to-list 'load-path (expand-file-name "lisp" user-emacs-directory))
 
   (require 'my-emacs-packages)             ; installs the manifest
@@ -48,9 +45,9 @@ keybindings last, always.
   (require 'my-emacs-windows)              ; buffer display policy
   (require 'my-emacs-editing)              ; selection / line editing
   (require 'my-whole-line-or-region)       ; whole-line kill/copy fallback
+  (require 'my-yasnippet)                  ; snippet expansion
   (require 'my-emacs-completions)          ; the completion menu
   (require 'my-orderless)                  ; fuzzy matching
   (require 'my-marginalia)                 ; menu annotations
-  (require 'my-yasnippet)                  ; snippet expansion
-  (require 'my-emacs-keybindings)          ; the C-M-S-s prefix — always last
+  (require 'my-emacs-keybindings)          ; bindings — always last
   #+end_src

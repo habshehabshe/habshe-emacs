@@ -46,11 +46,9 @@ frame is mapped or the bars flash. Do not migrate them down.
   (defgroup my-emacs-frames nil
     "Frame-level appearance for my Emacs configuration.")
 
-  ;; --- Theme ---------------------------------------------------------------
   (require-theme 'modus-themes)
   (modus-themes-load-theme 'modus-operandi)
 
-  ;; --- Fonts ---------------------------------------------------------------
   ;; Adobe Courier for fixed-pitch faces, Adobe Helvetica for
   ;; variable-pitch. Both bitmap; Courier's real sizes on this machine
   ;; are 6, 8, 9, 11, 13, 14, 15, 18, 19, 26 — the default (9pt) is one
@@ -73,7 +71,8 @@ frame is mapped or the bars flash. Do not migrate them down.
     "Font family for the variable-pitch face.")
 
   (defconst my-font-height-default 90
-    "Default global font height in 1/10 pt (9pt, a real Courier bitmap size).")
+    "Default global font height in 1/10 pt.
+9pt is one of Courier's real bitmap sizes.")
 
   (defvar my-font-height my-font-height-default
     "Global font height in 1/10 pt. The only font-size knob.")
@@ -89,7 +88,6 @@ frame is mapped or the bars flash. Do not migrate them down.
   (set-face-attribute 'variable-pitch nil
                       :family my-variable-pitch-font-family)
 
-  ;; --- One font size everywhere --------------------------------------------
   ;; Themes and packages declare their own face heights (org headings
   ;; at 1.3x, and so on). Force every named face to the relative 1.0:
   ;; no face may declare a size; all sizing flows from the default
@@ -113,7 +111,6 @@ package that introduces rogue face heights."
   (add-hook 'after-init-hook #'my-normalize-face-heights)
   (with-eval-after-load 'org #'my-normalize-face-heights)
 
-  ;; --- Zoom ------------------------------------------------------------------
   ;; Terminal-style: one knob, everything resizes at once.
   (defun my-apply-font-height ()
     "Apply `my-font-height' to the default face."
@@ -144,12 +141,10 @@ Never below one point."
     (setq my-font-height my-font-height-default)
     (my-apply-font-height))
 
-  ;; --- Frame title ---------------------------------------------------------
   ;; Static: buffer identity is displayed elsewhere; the title never
   ;; needs to repeat it.
   (setopt frame-title-format '("GNU Emacs"))
 
-  ;; --- Tooltips and dialogs ------------------------------------------------
   ;; Help text renders in the echo area; prompts go to the minibuffer.
   ;; Never a separate tooltip frame, never a GUI dialog box.
   (tooltip-mode -1)

@@ -37,13 +37,11 @@ module.
   (defgroup my-emacs-keybindings nil
     "Keybindings for my Emacs configuration.")
 
-  ;; --- Leaves: no children, enter inferred ------------------------
   ;; Editing: line deletion. Canonical: caps+l then delete; hoisted.
   (keymap-global-set "C-M-s-\\" #'my-delete-line)
   (keymap-global-set "C-M-s-<backspace>" #'my-delete-to-beginning-of-line)
   (keymap-global-set "C-M-s-<delete>" #'my-delete-to-end-of-line)
 
-  ;; --- Buffer layer: caps+b ----------------------------------------
   (defvar my-buffer-map
     (define-keymap
       "RET"     #'switch-to-buffer
@@ -68,11 +66,9 @@ module.
 
   (keymap-global-set "C-M-s-b" my-buffer-map)
 
-  ;; --- File layer: caps+f -------------------------------------------
   ;; Reserved for file navigation and creation. Design pending.
   (keymap-global-set "C-M-s-f" #'ignore)
 
-  ;; --- Zoom layer: caps+z -------------------------------------------
   ;; A pure prefix - children are leaves, no action at z. The same
   ;; map serves as the repeat tail; RET is ignore, so a zoom
   ;; session also ends silently.
@@ -90,7 +86,6 @@ module.
   (put 'my-zoom-out   'repeat-map 'my-zoom-map)
   (put 'my-zoom-reset 'repeat-map 'my-zoom-map)
 
-  ;; --- Minibuffer completion map: the menu surface ------------------
   ;; Focus lives in the minibuffer (completion-auto-select nil in
   ;; my-emacs-completions), so the menu keys bind here. One map
   ;; suffices: minibuffer-local-must-match-map inherits it. Plain arrows
@@ -100,13 +95,17 @@ module.
   ;; commands: up/left previous candidate, down/right next. M-RET is
   ;; stock: minibuffer-choose-completion, the selected candidate.
   ;; M-insert pulls the selection into the input (ours).
-  (keymap-set minibuffer-local-completion-map "M-<insert>" #'my-completions-insert-selection)
-  (keymap-set minibuffer-local-completion-map "M-<down>"   #'minibuffer-next-completion)
-  (keymap-set minibuffer-local-completion-map "M-<up>"     #'minibuffer-previous-completion)
-  (keymap-set minibuffer-local-completion-map "M-<right>"  #'minibuffer-next-completion)
-  (keymap-set minibuffer-local-completion-map "M-<left>"   #'minibuffer-previous-completion)
+  (keymap-set minibuffer-local-completion-map
+              "M-<insert>" #'my-completions-insert-selection)
+  (keymap-set minibuffer-local-completion-map
+              "M-<down>" #'minibuffer-next-completion)
+  (keymap-set minibuffer-local-completion-map
+              "M-<up>" #'minibuffer-previous-completion)
+  (keymap-set minibuffer-local-completion-map
+              "M-<right>" #'minibuffer-next-completion)
+  (keymap-set minibuffer-local-completion-map
+              "M-<left>"  #'minibuffer-previous-completion)
 
-  ;; --- Repeat mode ----------------------------------------------------
   (repeat-mode 1)
 
   (provide 'my-emacs-keybindings)
