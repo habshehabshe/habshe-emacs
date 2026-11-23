@@ -5,7 +5,7 @@
 # The makefile is out of scope until its rework pass.
 set -u
 
-targets="$(ls org/*.org README.md .probe/*.sh .check/*.sh 2>/dev/null)"
+targets="$(ls org/*.org makefile README.md .probe/*.sh .check/*.sh 2>/dev/null)"
 [ -n "$targets" ] || { echo "FAIL: no source files found"; exit 1; }
 
 bad=0
