@@ -14,8 +14,10 @@ nil), and moving the list cursor never touches the input
 (minibuffer-completion-auto-choose nil): M-insert pulls the
 selected candidate in for editing, M-RET runs it outright.
 
-Two views: the compact multicolumn list (default) and the single
-column with metadata. M-m toggles. The default is a defcustom.
+The list is always a single column. The compact multicolumn view
+was tried and dropped: one column makes line motion and candidate
+motion the same thing, which is what the M-arrow bindings in
+my-emacs-keybindings rely on.
 
 #+begin_src emacs-lisp :tangle "../lisp/my-emacs-completions.el"
   ;;; my-emacs-completions.el --- GENERATED from org/emacs-completions.org — do not edit -*- lexical-binding: t; -*-
@@ -31,6 +33,10 @@ column with metadata. M-m toggles. The default is a defcustom.
   (setopt completion-auto-help 'always)
   ;; Moving the list cursor never touches the input.
   (setopt minibuffer-completion-auto-choose nil)
+  ;; Single column, always: the compact multicolumn grid was tried
+  ;; and dropped. One column is also what makes the stock M-arrow
+  ;; bindings correct: line motion is candidate motion.
+  (setopt completions-format 'one-column)
   ;; No height cap: under the no-split alist the menu takes the window.
   (setopt completions-max-height nil)
   ;; Our tables define their order; the display does not re-sort it.
@@ -56,36 +62,6 @@ completions window stays up. This is stock
 `minibuffer-choose-completion' with NO-EXIT and NO-QUIT."
     (interactive)
     (minibuffer-choose-completion t t))
-
-  ;; --- List cursor movement ------------------------------------------
-  ;; M-arrows move the selection in the completion window, never the
-  ;; input (minibuffer-completion-auto-choose nil). Down and up move
-  ;; by line (a grid line holds several candidates); left and right
-  ;; are bound in my-emacs-keybindings to the stock commands, which
-  ;; are exactly horizontal candidate motion. completion-auto-wrap is
-  ;; t, so grid motion wraps at the edges.
-
-  (defun my-completions-next-line ()
-    "Move the completion list cursor down one line.
-Stock `minibuffer-next-completion' with VERTICAL: line motion in
-the completion window, input untouched."
-    (interactive)
-    (minibuffer-next-completion nil t))
-
-  (defun my-completions-previous-line ()
-    "Move the completion list cursor up one line.
-Stock has no vertical previous from the minibuffer, so this runs
-`previous-line-completion' in the completion window itself. The
-argument matters: the stock command computes (- N), and a nil N
-from a plain Lisp call errors - pass 1."
-    (interactive)
-    (let ((window (get-buffer-window "*Completions*" 0)))
-      (if (not window)
-          (user-error "No completion window")
-        (with-selected-window window
-          (when completions-highlight-face
-            (setq-local cursor-face-highlight-nonselected-window t))
-          (previous-line-completion 1)))))
 
   (provide 'my-emacs-completions)
 #+end_src
