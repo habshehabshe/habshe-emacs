@@ -10,11 +10,6 @@
 # given an argument acts on that one thing; given no argument it acts on
 # ALL of them. Extensions are always inferred: org= takes a bare name.
 #
-# Command groups, in lifecycle order (targets and help follow it):
-#   BUILD    tangle           CHECK    status
-#   TRY      try              INSTALL  install / uninstall
-#   CLEAN    tidy / clean
-#
 # Invariants:
 #   * Tangling ALWAYS runs from the repo root with a clean Emacs (-Q):
 #     no user config can influence what the org files produce.
@@ -50,6 +45,9 @@ ORGS := $(wildcard $(ORG_DIR)/*.org)
 ifeq ($(strip $(ORGS)),)
 $(error No .org sources found under org/. Expected org/<name>.org.)
 endif
+# --- Discovery for probes and checks ---------------------------------------
+PROBES := $(wildcard .probe/*.sh)
+CHECKS := $(wildcard .check/*.sh)
 
 # Manifest extractor, as a shell snippet: append an org file (or several)
 # as arguments. Prints root-relative targets, deduplicated. Used both at
@@ -60,7 +58,7 @@ manifest = grep -hoE ':tangle[[:space:]]+"\.\./[^"]+"' $(1) \
 ALL_TARGETS := $(shell $(call manifest,$(ORGS)))
 
 .DEFAULT_GOAL := usage
-.PHONY: usage help tangle status try install uninstall tidy clean
+.PHONY: usage help tangle status probe check try install uninstall tidy clean
 
 # --------------------------------------------------------------------------
 usage:
@@ -77,17 +75,28 @@ help:
 	@echo ''
 	@echo 'Fresh clone entry point:  make tangle && make try'
 	@echo ''
-	@echo 'BUILD'
+	@echo ''
 	@echo '  make tangle              tangle every org under org/'
 	@echo '  make tangle org=NAME     tangle only org/NAME.org'
 	@echo ''
-	@echo 'CHECK'
+	@echo ''
 	@echo '  make status              freshness report for every org file:'
 	@echo '                           ok / STALE (org newer than target) /'
 	@echo '                           MISSING. Exits nonzero if any are not ok.'
 	@echo '  make status org=NAME     report for only org/NAME.org'
 	@echo ''
-	@echo 'TRY'
+	@echo ''
+	@echo '  make probe               run every probe under probes/ - diagnostic'
+	@echo '                           output; exit status informational.'
+	@echo '  make probe sh=NAME       run probes/NAME.sh via bash; opts=STRING'
+	@echo '                           passes STRING through as arguments.'
+	@echo ''
+	@echo ''
+	@echo '  make check               run every check under checks/ - invariants;'
+	@echo '                           exits nonzero if any check fails.'
+	@echo '  make check sh=NAME       run one shell check; opts=STRING passes through.'
+	@echo ''
+	@echo ''
 	@echo '  make try                 launch Emacs on the tangled tree with an'
 	@echo '                           explicit --init-directory (never touches'
 	@echo '                           the installed/legacy config). Refuses'
@@ -98,21 +107,21 @@ help:
 	@echo '                           e.g. opts="--debug-init" for a backtrace'
 	@echo '                           on init errors, opts="--daemon", opts="-nw".'
 	@echo ''
-	@echo 'INSTALL'
+	@echo ''
 	@echo '  make install             symlink ~/.config/emacs -> this repo,'
 	@echo '                           making it the default Emacs. Refuses'
 	@echo '                           if something already lives there.'
 	@echo '  make uninstall           remove that symlink — only if it is'
 	@echo '                           ours.'
 	@echo ''
-	@echo 'CLEAN'
+	@echo ''
 	@echo '  make tidy                remove every generated elisp file.'
 	@echo '                           Survivors: org/, snippets/, makefile, README.md,'
 	@echo '                           .gitignore. Stock Emacs until re-tangled.'
 	@echo '  make clean               tidy + wipe runtime state (elpa/,'
 	@echo '                           eln-cache/, backups, ...).'
 
-# --- BUILD: tangle ----------------------------------------------------------
+# --- tangle ----------------------------------------------------------
 # No org=  : tangle every org under org/.
 # org=NAME : tangle only that one. NAME may carry an .org suffix (stripped).
 tangle:
@@ -138,7 +147,7 @@ else
 	done
 endif
 
-# --- CHECK: status ----------------------------------------------------------
+# --- status ----------------------------------------------------------
 # No org=  : report every org file.
 # org=NAME : report only that one. Exits nonzero if anything is not ok.
 status:
@@ -170,7 +179,38 @@ else
 	exit $$bad
 endif
 
-# --- TRY: run and check -----------------------------------------------------
+# --- probe ------------------------------------------------------------
+# Probes observe and report (diagnostics); they never modify the tree.
+# Everything is a shell script: elisp payloads wrap in a heredoc inside
+# the script and run via a stock batch Emacs. No sh=: run every probe.
+# sh=NAME runs probes/NAME.sh with opts=STRING passed through verbatim
+# as arguments - the argumentable form. Throwaway probes stay in /tmp;
+# only generalized ones live here.
+probe:
+ifdef sh
+	@test -f ".probe/$(sh).sh" || { echo "no such probe: .probe/$(sh).sh"; exit 1; }
+	@bash ".probe/$(sh).sh" $(opts)
+else
+	@set -e; for p in $(PROBES); do \
+          echo "== probe $$p"; bash "$$p"; done
+endif
+
+# --- check -----------------------------------------------------------
+# Checks enforce invariants; a check exits nonzero when violated.
+# Everything is a shell script. No sh=: run every check, aggregate
+# failures, exit nonzero if any. sh=NAME runs one; opts= passes through.
+check:
+ifdef sh
+	@test -f ".check/$(sh).sh" || { echo "no such check: .check/$(sh).sh"; exit 1; }
+	@bash ".check/$(sh).sh" $(opts) && echo "PASS: .check/$(sh).sh"
+else
+	@bad=0; for c in $(CHECKS); do \
+          echo "== check $$c"; bash "$$c" || bad=1; done; \
+        if [ $$bad -ne 0 ]; then echo 'check: FAILED — an invariant is violated'; exit 1; \
+        else echo 'check: all invariants hold'; fi
+endif
+
+# --- run and check -----------------------------------------------------
 # Launches the tangled tree via an explicit --init-directory. The check
 # is pre-flight: init.el MUST exist (per the Emacs manual, --init-directory
 # without init.el silently falls back to the default init file — i.e. the
@@ -195,7 +235,7 @@ try:
 	done; true
 	$(EMACS) --init-directory="$(ROOT_DIR)" $(opts)
 
-# --- INSTALL: install / uninstall ------------------------------------------
+# --- install / uninstall ------------------------------------------
 # install makes this repo the default Emacs via one symlink at the XDG
 # slot (~/.config/emacs), which outranks any ~/.emacs.d. It refuses to
 # touch an occupied slot — moving the legacy config aside is a deliberate
@@ -222,7 +262,7 @@ uninstall:
 	  echo "$(DEST) is not ours — not touching it."; exit 1; \
 	fi
 
-# --- CLEAN: tidy / clean ----------------------------------------------------
+# --- tidy / clean ----------------------------------------------------
 # tidy removes every generated elisp file. The kill list IS the manifest.
 # Survivors: org/ sources, makefile, README.md, .gitignore — everything
 # no :tangle header claims. After tidy the tree is stock Emacs (no
